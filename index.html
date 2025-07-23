@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 Motor Controller</title>
+</head>
+<body>
+  <button id="connect">Connect</button>
+  <p>State: <span id="status">Not connected</span></p>
+  <p>Counter: <span id="data">--</span></p>
+  <p>RPM: <span id="rpm">--</span></p>
+
+  <script>
+    const serviceUuid = '12345678-1234-1234-1234-1234567890ab';
+    const characteristicUuid = 'abcdefab-1234-1234-1234-abcdefabcdef';
+    const charRpmUuid = '54b090b7-3b74-450a-9d4c-e85078ad8db9';
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          //acceptAllDevices: true
+          filters: [{ services: [serviceUuid] }]
+        });
+
+        document.getElementById('status').textContent = `Shoosed: ${device.name}`;
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(serviceUuid);
+        const characteristic = await service.getCharacteristic(characteristicUuid);
+        const charRPM = await service.getCharacteristic(charRpmUuid);
+
+        // Start notificaties
+        await characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          
+          let decoder = new TextDecoder('utf-8');
+          let text = decoder.decode(value.buffer);
+
+          document.getElementById('data').textContent = text;
+        });
+
+        await charRPM.startNotifications();
+        charRPM.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          
+          const floatValue = value.getFloat32(0, true);
+
+          document.getElementById('rpm').textContent = `${floatValue.toFixed(1)}`;
+        });
+
+        document.getElementById('status').textContent = 'Connected';
+      } catch (err) {
+        console.error('Error:', err);
+        document.getElementById('status').textContent = 'Connection error';
+      }
+    });
+  </script>
+</body>
+</html>
