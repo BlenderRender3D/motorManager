@@ -28,13 +28,15 @@
   <p>State: <span id="status">Not connected</span></p>
   <p>Counter: <span id="data">--</span></p>
   <p>RPM: <span id="rpm">--</span></p>
+  <button id="toggle">On/Off</button>
 
   <script>
     const serviceUuid = '12345678-1234-1234-1234-1234567890ab';
-    const characteristicUuid = 'abcdefab-1234-1234-1234-abcdefabcdef';
-    const charRpmUuid = '54b090b7-3b74-450a-9d4c-e85078ad8db9';
+    let writeCharacteristic;
+    let isRunning = false;
 
-    document.getElementById('connect').addEventListener('click', async () => {
+    document.getElementById('connect').addEventListener('click', async () =>
+    {
       try {
         const device = await navigator.bluetooth.requestDevice({
           //acceptAllDevices: true
@@ -44,8 +46,11 @@
         document.getElementById('status').textContent = `Shoosed: ${device.name}`;
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
-        const characteristic = await service.getCharacteristic(characteristicUuid);
-        const charRPM = await service.getCharacteristic(charRpmUuid);
+        const characteristic = await service.getCharacteristic('abcdefab-1234-1234-1234-abcdefabcdef');
+        const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
+
+        const writeChar = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
+        writeCharacteristic = writeChar;
 
         // Start notificaties
         await characteristic.startNotifications();
@@ -73,6 +78,18 @@
         document.getElementById('status').textContent = 'Connection error';
       }
     });
+
+    document.getElementById('toggle').addEventListener('click', async () =>
+    {
+      if (!writeCharacteristic) return;
+
+      isRunning = !isRunning;
+      const data = new Uint8Array([isRunning ? 1 : 0]);
+      await writeCharacteristic.writeValue(data);
+
+      document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
+    });
+
   </script>
 </body>
 </html>
