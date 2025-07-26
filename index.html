@@ -46,15 +46,20 @@
         document.getElementById('status').textContent = `Shoosed: ${device.name}`;
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
-        const characteristic = await service.getCharacteristic('abcdefab-1234-1234-1234-abcdefabcdef');
+        const charCounter = await service.getCharacteristic('abcdefab-1234-1234-1234-abcdefabcdef');
         const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
 
         const writeChar = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
         writeCharacteristic = writeChar;
 
+        const value = await writeChar.readValue();
+        const current = value.getUint8(0);
+        isRunning = current === 1;
+        document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
+
         // Start notificaties
-        await characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', (event) => {
+        await charCounter.startNotifications();
+        charCounter.addEventListener('characteristicvaluechanged', (event) => {
           const value = event.target.value;
           
           let decoder = new TextDecoder('utf-8');
