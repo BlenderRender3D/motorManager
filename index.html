@@ -27,11 +27,12 @@
   <button id="connect">Connect</button>
   <p>State: <span id="status">Not connected</span></p>
   <p>Counter: <span id="data">--</span></p>
+  <p>Loop Counter: <span id="loop-count">--</span> Hz</p>
   <p>RPM: <span id="rpm">--</span></p>
   <button id="toggle">On/Off</button>
 
   <script>
-    const serviceUuid = '12345678-1234-1234-1234-1234567890ab';
+    const serviceUuid = '0da90396-9373-4d61-8fa8-0556be74c943';
     let writeCharacteristic;
     let isRunning = false;
 
@@ -47,6 +48,7 @@
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
         const charCounter = await service.getCharacteristic('abcdefab-1234-1234-1234-abcdefabcdef');
+        const charLoopCount = await service.getCharacteristic('3654ee82-45be-4812-965b-115fbe617714');
         const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
 
         const writeChar = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
@@ -68,6 +70,16 @@
           document.getElementById('data').textContent = text;
         });
 
+        await charLoopCount.startNotifications();
+        charLoopCount.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          
+          let decoder = new TextDecoder('utf-8');
+          let text = decoder.decode(value.buffer);
+
+          document.getElementById('loop-count').textContent = text;
+        });
+
         await charRPM.startNotifications();
         charRPM.addEventListener('characteristicvaluechanged', (event) => {
           const value = event.target.value;
@@ -75,6 +87,14 @@
           const floatValue = value.getFloat32(0, true);
 
           document.getElementById('rpm').textContent = `${floatValue.toFixed(1)}`;
+        });
+
+        await writeChar.startNotifications();
+        writeChar.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          const current = value.getUint8(0);
+          isRunning = current === 1;
+          document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
         });
 
         document.getElementById('status').textContent = 'Connected';
