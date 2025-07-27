@@ -25,7 +25,6 @@
 <body>
   <h2>ESP32 Motor Controller</h2>
   <button id="connect">Connect</button>
-  <p>State: <span id="status">Not connected</span></p>
   <p>Counter: <span id="data">--</span></p>
   <p>Loop Counter: <span id="loop-count">--</span> Hz</p>
   <p>RPM: <span id="rpm">--</span></p>
@@ -35,6 +34,17 @@
     const serviceUuid = '0da90396-9373-4d61-8fa8-0556be74c943';
     let writeCharacteristic;
     let isRunning = false;
+    const connectButton = document.getElementById('connect');
+    const toggleButton = document.getElementById('toggle');
+
+    toggleButton.disabled = true;
+
+    function onDisconnected()
+    {
+      console.log("disconnected");
+      connectButton.style.display = 'inline';
+      toggleButton.disabled = true;
+    }
 
     document.getElementById('connect').addEventListener('click', async () =>
     {
@@ -44,7 +54,9 @@
           filters: [{ services: [serviceUuid] }]
         });
 
-        document.getElementById('status').textContent = `Shoosed: ${device.name}`;
+        connectButton.style.display = 'none';
+        toggleButton.disabled = false;
+
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
         const charCounter = await service.getCharacteristic('abcdefab-1234-1234-1234-abcdefabcdef');
@@ -57,7 +69,9 @@
         const value = await writeChar.readValue();
         const current = value.getUint8(0);
         isRunning = current === 1;
-        document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
+        toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+
+        device.addEventListener('gattserverdisconnected', onDisconnected);
 
         // Start notificaties
         await charCounter.startNotifications();
@@ -94,13 +108,12 @@
           const value = event.target.value;
           const current = value.getUint8(0);
           isRunning = current === 1;
-          document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
+          toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
         });
 
         document.getElementById('status').textContent = 'Connected';
       } catch (err) {
         console.error('Error:', err);
-        document.getElementById('status').textContent = 'Connection error';
       }
     });
 
