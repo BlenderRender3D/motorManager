@@ -26,16 +26,23 @@
     td {
       padding: 5px;
     }
+    .title {
+      font-weight: bold;
+      font-style: italic;
+      padding-top: 25px;
+    }
   </style>
 </head>
 <body>
   <h2>EMF Recovery Motor</h2>
   <button id="connect">Connect</button>
   <table>
+    <tr><td class="title">TELEMETRY</td></tr>
     <tr><td>Ping:</td><td><span id="ping">--</span></td><td></td></tr>
     <tr><td>Code loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
     <tr><td>Coil On Time:</td><td><span id="coil-on">--</span></td><td>ms</td></tr>
     <tr><td>Motor speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
+    <tr><td class="title">CONTROLS</td></tr>
     <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" style="text-align: right;"></td><td>ms</td></tr>
   </table>
 
