@@ -20,18 +20,24 @@
       font-size: 1.1em;
       text-align: center;
     }
+    table td:nth-child(2) {
+      text-align: right;
+    }
+    td {
+      padding: 5px;
+    }
   </style>
 </head>
 <body>
   <h2>EMF Recovery Motor</h2>
   <button id="connect">Connect</button>
-  <p>Ping: <span id="ping">--</span></p>
-  <p>Code loop: <span id="loop-count">--</span> kHz</p>
-  <p>Coil On Time: <span id="coil-on">--</span> ms</p>
-  <p>Motor speed: <span id="rpm">--</span> RPM</p>
-
-  <label for="coilTime">Coil On Time (ms):</label>
-  <input type="number" id="coilTime" min="0" max="1000" value="50">
+  <table>
+    <tr><td>Ping:</td><td><span id="ping">--</span></td><td></td></tr>
+    <tr><td>Code loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
+    <tr><td>Coil On Time:</td><td><span id="coil-on">--</span></td><td>ms</td></tr>
+    <tr><td>Motor speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
+    <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" value="50" style="text-align: right;"></td><td>ms</td></tr>
+  </table>
 
   <button id="toggle">On/Off</button>
 
