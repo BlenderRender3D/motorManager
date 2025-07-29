@@ -36,7 +36,7 @@
     <tr><td>Code loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
     <tr><td>Coil On Time:</td><td><span id="coil-on">--</span></td><td>ms</td></tr>
     <tr><td>Motor speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
-    <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" value="50" style="text-align: right;"></td><td>ms</td></tr>
+    <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" style="text-align: right;"></td><td>ms</td></tr>
   </table>
 
   <button id="toggle">On/Off</button>
@@ -51,12 +51,14 @@
     const coilInput = document.getElementById('coilTime');
 
     toggleButton.disabled = true;
+    coilInput.disabled = true;
 
     function onDisconnected()
     {
       console.log("disconnected");
       connectButton.style.display = 'inline';
       toggleButton.disabled = true;
+      coilInput.disabled = true;
     }
 
     document.getElementById('connect').addEventListener('click', async () =>
@@ -68,7 +70,6 @@
         });
 
         connectButton.style.display = 'none';
-        toggleButton.disabled = false;
 
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
@@ -78,10 +79,14 @@
         charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
         charMotorOnOff = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
 
-        const value = await charMotorOnOff.readValue();
-        const current = value.getUint8(0);
+        let value = await charMotorOnOff.readValue();
+        let current = value.getUint8(0);
         isRunning = current === 1;
         toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+
+        value = await charCoilOnTime.readValue();
+        current = value.getInt32(0, /*littleEndian=*/true);
+        coilInput.value = current;
 
         device.addEventListener('gattserverdisconnected', onDisconnected);
 
@@ -116,6 +121,7 @@
           const current = value.getUint8(0);
           isRunning = current === 1;
           toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+          toggleButton.disabled = false;
         });
 
         await charCoilOnTime.startNotifications();
@@ -123,6 +129,7 @@
           const value = event.target.value;
           const current = value.getInt32(0, /*littleEndian=*/true);
           document.getElementById('coil-on').textContent = current;
+          coilInput.disabled = false;
         });
 
       } catch (err) {
