@@ -29,14 +29,20 @@
   <p>Code loop: <span id="loop-count">--</span> kHz</p>
   <p>Coil On Time: <span id="coil-on">--</span> ms</p>
   <p>Motor speed: <span id="rpm">--</span> RPM</p>
+
+  <label for="coilTime">Coil On Time (ms):</label>
+  <input type="number" id="coilTime" min="0" max="1000" value="50">
+
   <button id="toggle">On/Off</button>
 
   <script>
     const serviceUuid = '0da90396-9373-4d61-8fa8-0556be74c943';
-    let writeCharacteristic;
+    let charMotorOnOff;
+    let charCoilOnTime;
     let isRunning = false;
     const connectButton = document.getElementById('connect');
     const toggleButton = document.getElementById('toggle');
+    const coilInput = document.getElementById('coilTime');
 
     toggleButton.disabled = true;
 
@@ -63,11 +69,10 @@
         const charPing = await service.getCharacteristic('07c2fe80-a0a0-4cda-9903-2e7418cd1469');
         const charLoopCount = await service.getCharacteristic('3654ee82-45be-4812-965b-115fbe617714');
         const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
-        const charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
-        const writeChar = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
-        writeCharacteristic = writeChar;
+        charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
+        charMotorOnOff = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
 
-        const value = await writeChar.readValue();
+        const value = await charMotorOnOff.readValue();
         const current = value.getUint8(0);
         isRunning = current === 1;
         toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
@@ -99,9 +104,8 @@
           document.getElementById('rpm').textContent = `${floatValue.toFixed(1)}`;
         });
 
-        
-        await writeChar.startNotifications();
-        writeChar.addEventListener('characteristicvaluechanged', (event) => {
+        await charMotorOnOff.startNotifications();
+        charMotorOnOff.addEventListener('characteristicvaluechanged', (event) => {
           const value = event.target.value;
           const current = value.getUint8(0);
           isRunning = current === 1;
@@ -121,13 +125,31 @@
       }
     });
 
+    coilInput.addEventListener('change', async () =>
+    {
+      const value = parseInt(coilInput.value, 10);
+
+      if (charCoilOnTime)
+      {
+        const buffer = new ArrayBuffer(4);
+        const view = new DataView(buffer);
+        view.setInt32(0, value, true);
+        await charCoilOnTime.writeValue(buffer);
+        console.log('Send:', value);
+      }
+      else
+      {
+        console.warn("BLE writeCharacteristic not available");
+      }
+    });
+
     document.getElementById('toggle').addEventListener('click', async () =>
     {
-      if (!writeCharacteristic) return;
+      if (!charMotorOnOff) return;
 
       isRunning = !isRunning;
       const data = new Uint8Array([isRunning ? 1 : 0]);
-      await writeCharacteristic.writeValue(data);
+      await charMotorOnOff.writeValue(data);
 
       document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
     });
