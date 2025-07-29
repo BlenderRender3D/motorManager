@@ -27,6 +27,7 @@
   <button id="connect">Connect</button>
   <p>Ping: <span id="ping">--</span></p>
   <p>Code loop: <span id="loop-count">--</span> kHz</p>
+  <p>Coil On Time: <span id="coil-on">--</span> ms</p>
   <p>Motor speed: <span id="rpm">--</span> RPM</p>
   <button id="toggle">On/Off</button>
 
@@ -62,6 +63,7 @@
         const charPing = await service.getCharacteristic('07c2fe80-a0a0-4cda-9903-2e7418cd1469');
         const charLoopCount = await service.getCharacteristic('3654ee82-45be-4812-965b-115fbe617714');
         const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
+        const charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
         const writeChar = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
         writeCharacteristic = writeChar;
 
@@ -97,6 +99,7 @@
           document.getElementById('rpm').textContent = `${floatValue.toFixed(1)}`;
         });
 
+        
         await writeChar.startNotifications();
         writeChar.addEventListener('characteristicvaluechanged', (event) => {
           const value = event.target.value;
@@ -105,8 +108,16 @@
           toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
         });
 
+        await charCoilOnTime.startNotifications();
+        charCoilOnTime.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          const current = value.getInt32(0, /*littleEndian=*/true);
+          document.getElementById('coil-on').textContent = current;
+        });
+
       } catch (err) {
         console.error('Error:', err);
+        console.log(err);
       }
     });
 
