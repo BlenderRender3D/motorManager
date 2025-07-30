@@ -20,6 +20,7 @@
     button {
       font-size: 1.2em;
       padding: 0.8em 1.5em;
+      width: 200px;
     }
     #status, #data {
       font-size: 1.1em;
@@ -56,6 +57,7 @@
   </table>
 
   <button id="toggle">On/Off</button>
+  <button id="pulse-button">Single Pulse</button>
 
   <script>
     const serviceUuid = '0da90396-9373-4d61-8fa8-0556be74c943';
@@ -65,11 +67,13 @@
     let isRunning = false;
     const connectButton = document.getElementById('connect');
     const toggleButton = document.getElementById('toggle');
+    const pulseButton = document.getElementById('pulse-button');
     const coilTimeInput = document.getElementById('coilTime');
     const coilDelayInput = document.getElementById('coilDelay');
     const motorMode = document.getElementById('motor-mode');
 
     toggleButton.disabled = true;
+    pulseButton.disabled = true;
     coilTimeInput.disabled = true;
     coilDelayInput.disabled = true;
 
@@ -78,6 +82,7 @@
       console.log("disconnected");
       connectButton.style.display = 'inline';
       toggleButton.disabled = true;
+      pulseButton.disabled = true;
       coilTimeInput.disabled = true;
       coilDelayInput.disabled = true;
       document.getElementById('ping').textContent = "⚪";
@@ -107,6 +112,7 @@
         charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
         charCoilOnDelay = await service.getCharacteristic('27bd1539-702d-4783-9aa0-09f71e90528d');
         charMotorOnOff = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
+        charPulse = await service.getCharacteristic('c7f7372a-ecdb-46bf-bbab-393338d0b1b4');
 
         let value = await charMotorOnOff.readValue();
         let current = value.getUint8(0);
@@ -156,6 +162,7 @@
           updateToggleButton();
           motorMode.textContent = isRunning ? "🟢" : "⚪";
           toggleButton.disabled = false;
+          pulseButton.disabled = isRunning;
         });
 
         await charCoilOnTime.startNotifications();
@@ -225,6 +232,12 @@
       await charMotorOnOff.writeValue(data);
 
       updateToggleButton();
+    });
+
+    pulseButton.addEventListener('click', async () =>
+    {
+      const data = new Uint8Array([1]);
+      await charPulse.writeValue(data);
     });
 
   </script>
