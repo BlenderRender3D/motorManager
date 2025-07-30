@@ -39,11 +39,14 @@
   <table>
     <tr><td class="title">TELEMETRY</td></tr>
     <tr><td>Ping:</td><td><span id="ping">--</span></td><td></td></tr>
-    <tr><td>Code loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
+    <tr><td>Code Loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
     <tr><td>Coil On Time:</td><td><span id="coil-on">--</span></td><td>ms</td></tr>
-    <tr><td>Motor speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
+    <tr><td>Coil On Delay:</td><td><span id="coil-on-delay">--</span></td><td>ms</td></tr>
+    <tr><td>Motor Mode:</td><td><span id="motor-mode">--</span></td></tr>
+    <tr><td>Motor Speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
     <tr><td class="title">CONTROLS</td></tr>
     <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" style="text-align: right;"></td><td>ms</td></tr>
+    <tr><td>Set Coil On Delay:</td><td><input type="number" id="coilDelay" min="0" max="1000" style="text-align: right;"></td><td>ms</td></tr>
   </table>
 
   <button id="toggle">On/Off</button>
@@ -52,20 +55,25 @@
     const serviceUuid = '0da90396-9373-4d61-8fa8-0556be74c943';
     let charMotorOnOff;
     let charCoilOnTime;
+    let charCoilOnDelay;
     let isRunning = false;
     const connectButton = document.getElementById('connect');
     const toggleButton = document.getElementById('toggle');
-    const coilInput = document.getElementById('coilTime');
+    const coilTimeInput = document.getElementById('coilTime');
+    const coilDelayInput = document.getElementById('coilDelay');
+    const motorMode = document.getElementById('motor-mode');
 
     toggleButton.disabled = true;
-    coilInput.disabled = true;
+    coilTimeInput.disabled = true;
+    coilDelayInput.disabled = true;
 
     function onDisconnected()
     {
       console.log("disconnected");
       connectButton.style.display = 'inline';
       toggleButton.disabled = true;
-      coilInput.disabled = true;
+      coilTimeInput.disabled = true;
+      coilDelayInput.disabled = true;
     }
 
     document.getElementById('connect').addEventListener('click', async () =>
@@ -84,6 +92,7 @@
         const charLoopCount = await service.getCharacteristic('3654ee82-45be-4812-965b-115fbe617714');
         const charRPM = await service.getCharacteristic('54b090b7-3b74-450a-9d4c-e85078ad8db9');
         charCoilOnTime = await service.getCharacteristic('4b1be1a3-273d-4f9a-b3d3-a0f6869292d4');
+        charCoilOnDelay = await service.getCharacteristic('27bd1539-702d-4783-9aa0-09f71e90528d');
         charMotorOnOff = await service.getCharacteristic('87a4041b-05af-4990-ab63-efd057672332');
 
         let value = await charMotorOnOff.readValue();
@@ -93,7 +102,11 @@
 
         value = await charCoilOnTime.readValue();
         current = value.getInt32(0, /*littleEndian=*/true);
-        coilInput.value = current;
+        coilTimeInput.value = current;
+
+        value = await charCoilOnDelay.readValue();
+        current = value.getInt32(0, /*littleEndian=*/true);
+        coilDelayInput.value = current;
 
         device.addEventListener('gattserverdisconnected', onDisconnected);
 
@@ -128,6 +141,7 @@
           const current = value.getUint8(0);
           isRunning = current === 1;
           toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+          motorMode.textContent = isRunning ? "on" : "off";
           toggleButton.disabled = false;
         });
 
@@ -136,7 +150,15 @@
           const value = event.target.value;
           const current = value.getInt32(0, /*littleEndian=*/true);
           document.getElementById('coil-on').textContent = current;
-          coilInput.disabled = false;
+          coilTimeInput.disabled = false;
+        });
+
+        await charCoilOnDelay.startNotifications();
+        charCoilOnDelay.addEventListener('characteristicvaluechanged', (event) => {
+          const value = event.target.value;
+          const current = value.getInt32(0, /*littleEndian=*/true);
+          document.getElementById('coil-on-delay').textContent = current;
+          coilDelayInput.disabled = false;
         });
 
       } catch (err) {
@@ -145,9 +167,9 @@
       }
     });
 
-    coilInput.addEventListener('change', async () =>
+    coilTimeInput.addEventListener('change', async () =>
     {
-      const value = parseInt(coilInput.value, 10);
+      const value = parseInt(coilTimeInput.value, 10);
 
       if (charCoilOnTime)
       {
@@ -155,6 +177,24 @@
         const view = new DataView(buffer);
         view.setInt32(0, value, true);
         await charCoilOnTime.writeValue(buffer);
+        console.log('Send:', value);
+      }
+      else
+      {
+        console.warn("BLE writeCharacteristic not available");
+      }
+    });
+
+    coilDelayInput.addEventListener('change', async () =>
+    {
+      const value = parseInt(coilDelayInput.value, 10);
+
+      if (charCoilOnDelay)
+      {
+        const buffer = new ArrayBuffer(4);
+        const view = new DataView(buffer);
+        view.setInt32(0, value, true);
+        await charCoilOnDelay.writeValue(buffer);
         console.log('Send:', value);
       }
       else
