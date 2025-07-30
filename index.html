@@ -42,7 +42,7 @@
     <tr><td>Code Loop:</td><td><span id="loop-count">--</span></td><td>kHz</td></tr>
     <tr><td>Coil On Time:</td><td><span id="coil-on">--</span></td><td>ms</td></tr>
     <tr><td>Coil On Delay:</td><td><span id="coil-on-delay">--</span></td><td>ms</td></tr>
-    <tr><td>Motor Mode:</td><td><span id="motor-mode">--</span></td></tr>
+    <tr><td>Motor On:</td><td><span id="motor-mode">--</span></td></tr>
     <tr><td>Motor Speed:</td><td><span id="rpm">--</span></td><td>rpm</td></tr>
     <tr><td class="title">CONTROLS</td></tr>
     <tr><td>Set Coil On Time:</td><td><input type="number" id="coilTime" min="0" max="1000" style="text-align: right;"></td><td>ms</td></tr>
@@ -74,6 +74,7 @@
       toggleButton.disabled = true;
       coilTimeInput.disabled = true;
       coilDelayInput.disabled = true;
+      document.getElementById('ping').textContent = "⚪";
     }
 
     function updateToggleButton()
@@ -121,7 +122,7 @@
           const value = event.target.value;
           const current = value.getUint8(0);
 
-          document.getElementById('ping').textContent = current;
+          document.getElementById('ping').textContent = current === 1 ? "🔵" : "⚪";
         });
 
         await charLoopCount.startNotifications();
@@ -147,7 +148,7 @@
           const current = value.getUint8(0);
           isRunning = current === 1;
           updateToggleButton();
-          motorMode.textContent = isRunning ? "on" : "off";
+          motorMode.textContent = isRunning ? "🟢" : "⚪";
           toggleButton.disabled = false;
         });
 
