@@ -76,6 +76,12 @@
       coilDelayInput.disabled = true;
     }
 
+    function updateToggleButton()
+    {
+      toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+      toggleButton.style.background = isRunning ? "#D96E68" : "#74B579";
+    }
+
     document.getElementById('connect').addEventListener('click', async () =>
     {
       try {
@@ -98,7 +104,7 @@
         let value = await charMotorOnOff.readValue();
         let current = value.getUint8(0);
         isRunning = current === 1;
-        toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+        updateToggleButton();
 
         value = await charCoilOnTime.readValue();
         current = value.getInt32(0, /*littleEndian=*/true);
@@ -140,7 +146,7 @@
           const value = event.target.value;
           const current = value.getUint8(0);
           isRunning = current === 1;
-          toggleButton.textContent = isRunning ? 'Turn off' : 'Turn on';
+          updateToggleButton();
           motorMode.textContent = isRunning ? "on" : "off";
           toggleButton.disabled = false;
         });
@@ -203,7 +209,7 @@
       }
     });
 
-    document.getElementById('toggle').addEventListener('click', async () =>
+    toggleButton.addEventListener('click', async () =>
     {
       if (!charMotorOnOff) return;
 
@@ -211,7 +217,7 @@
       const data = new Uint8Array([isRunning ? 1 : 0]);
       await charMotorOnOff.writeValue(data);
 
-      document.getElementById('toggle').textContent = isRunning ? 'Turn off' : 'Turn on';
+      updateToggleButton();
     });
 
   </script>
